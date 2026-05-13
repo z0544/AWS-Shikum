@@ -1,4 +1,6 @@
-strands-agents 
-strands-agents-tools 
-boto3 
-bedrock-agentcore
+# Python 3.12+ recommended (see pyproject.toml). Strands may not resolve on Python < 3.10.
+strands-agents>=1.10.0
+strands-agents-tools>=0.2.9
+boto3>=1.40.45
+bedrock-agentcore>=0.1.7
+bedrock-agentcore-starter-toolkit>=0.1.19

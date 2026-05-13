@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "description_he": "מבנה קבצים בבאקט S3 למאגר מקטים/ספקים/קישורים (UTF-8 CSV).",
+  "default_prefix": "rehab-data/v1",
+  "objects": {
+    "sku_catalog": "sku_catalog.csv",
+    "suppliers": "suppliers.csv",
+    "supplier_sku_links": "supplier_sku_links.csv"
+  },
+  "notes": [
+    "העלה קבצים מנורמלים (UTF-8) — למשל לאחר הרצת convert_csvs.py",
+    "בסביבת הריצה של AgentCore הגדר REHAB_DATA_S3_BUCKET ואופציונלית REHAB_DATA_S3_PREFIX",
+    "תפקיד הריצה צריך הרשאת s3:GetObject על arn:aws:s3:::BUCKET/PREFIX/*"
+  ]
+}

@@ -10,6 +10,11 @@ ENV UV_SYSTEM_PYTHON=1 \
     AWS_REGION=us-west-2 \
     AWS_DEFAULT_REGION=us-west-2
 
+# Optional: rehab catalog CSVs from S3 (see README.md, rehab_s3_layout.json)
+# ENV REHAB_DATA_S3_BUCKET=your-bucket-name
+# ENV REHAB_DATA_S3_PREFIX=rehab-data/v1
+# ENV REHAB_DATA_S3_REGION=us-west-2
+
 
 
 COPY requirements.txt requirements.txt

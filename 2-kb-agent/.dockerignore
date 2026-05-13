@@ -59,6 +59,8 @@ docs/
 
 # Project specific
 tests/
+# Large raw KMS exports — production data comes from S3 (see REHAB_DATA_S3_BUCKET)
+raw_csvs/
 
 # Bedrock AgentCore specific - keep config but exclude runtime files
 .bedrock_agentcore.yaml

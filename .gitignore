@@ -2,3 +2,4 @@ __pycache__/
 .venv/
 .env
 *.zip
+2-kb-agent/raw_csvs/
