@@ -7,6 +7,27 @@ import datetime
 from boto3.session import Session
 from botocore.exceptions import ClientError
 
+
+def _patch_gradio_client_json_schema_bool() -> None:
+    """Pydantic 2.11+ מייצר JSON Schema עם additionalProperties: true (בוליאני).
+    gradio-client ישן קורא ל-get_type(True) ונופל. עוטפים את הפונקציה הפנימית."""
+    try:
+        import gradio_client.utils as _gcu
+
+        _orig = _gcu._json_schema_to_python_type
+
+        def _json_schema_to_python_type(schema, defs):  # type: ignore[no-untyped-def]
+            if isinstance(schema, bool):
+                return "Any"
+            return _orig(schema, defs)
+
+        _gcu._json_schema_to_python_type = _json_schema_to_python_type
+    except Exception as exc:
+        print(f"[Warning] gradio_client schema hotfix skipped: {exc}")
+
+
+_patch_gradio_client_json_schema_bool()
+
 # --- מעקף הגדרות מקומי במקום AWS SSM ---
 # הגדרת הודעת הפתיחה בנפרד כדי למנוע בעיות סינטקס
 msg = "שלום! אני הסוכן החכם למיצוי זכויות באגף השיקום. כדי שאוכל לתת לך את המידע המדויק ביותר, אשמח לדעת: 1. מאיזה עיר? 2. אחוזי נכות? 3. נושא לבירור? 4. מספר פנייה?"
@@ -805,9 +826,26 @@ if __name__ == "__main__":
     print(f"Listen:    {server_name}:{server_port}")
     print("=" * 60)
     print("\nChat interface ready. Open your browser to start chatting.")
-    demo.launch(
-        share=False,
+    _share = os.getenv("GRADIO_SHARE", "").lower() in ("1", "true", "yes")
+    _kw = dict(
+        share=_share,
         server_name=server_name,
         server_port=server_port,
         inbrowser=False,
     )
+    try:
+        demo.launch(**_kw)
+    except ValueError as exc:
+        msg = str(exc).lower()
+        if _share or ("localhost" not in msg and "shareable" not in msg):
+            raise
+        print(
+            "[Info] Gradio blocked local URL check; retrying with share=True. "
+            "Or set GRADIO_SHARE=1 before launch to use a tunnel explicitly."
+        )
+        demo.launch(
+            share=True,
+            server_name=server_name,
+            server_port=server_port,
+            inbrowser=False,
+        )
