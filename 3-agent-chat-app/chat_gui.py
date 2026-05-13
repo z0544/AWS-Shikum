@@ -776,7 +776,9 @@ if __name__ == "__main__":
     print(f"Region:    {region}")
     print(f"Agent ARN: {agent_arn}")
     server_port = int(os.getenv("GRADIO_SERVER_PORT", "8084"))
-    print(f"Server:    http://0.0.0.0:{server_port}")
+    # 127.0.0.1 = רק מקומי. ב־lab / proxy (CloudFront) הרץ עם: GRADIO_SERVER_NAME=0.0.0.0
+    server_name = os.getenv("GRADIO_SERVER_NAME", "127.0.0.1")
+    print(f"Listen:    {server_name}:{server_port}")
     print("=" * 60)
     print("\nChat interface ready. Open your browser to start chatting.")
-    demo.launch(share=False, server_name="127.0.0.1", server_port=server_port)
+    demo.launch(share=False, server_name=server_name, server_port=server_port)
