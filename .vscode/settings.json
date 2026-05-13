@@ -1,0 +1,14 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "/usr/bin/python3": true,
+        "/^cd /workshop/3-agent-chat-app && python3 -m build$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^python3 -c \"import inspect, gradio\\.chat_interface as ci; print\\(inspect\\.signature\\(ci\\.ChatInterface\\.__init__\\)\\); print\\(inspect\\.getsource\\(ci\\.ChatInterface\\.__init__\\)\\)\"$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "true": true
+    }
+}

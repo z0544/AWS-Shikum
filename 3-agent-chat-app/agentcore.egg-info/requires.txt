@@ -1,0 +1,4 @@
+boto3>=1.40.45
+ipython>=9.6.0
+gradio<=6.2.0
+requests
