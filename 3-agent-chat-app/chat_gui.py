@@ -89,7 +89,8 @@ except ClientError:
 # ── Session management ─────────────────────────────────────────────────────────
 current_session_id = str(uuid.uuid4()).replace('-', '') + str(uuid.uuid4()).replace('-', '')[:5]
 chat_sessions      = {}
-initial_history    = [{"role": "assistant", "content": introductory_message}]
+# Gradio Chatbot ברירת מחדל: רשימת זוגות [הודעת משתמש, הודעת בוט] (מחרוזת או None)
+initial_history = [[None, introductory_message]]
 
 def generate_session_id():
     return str(uuid.uuid4()).replace('-', '') + str(uuid.uuid4()).replace('-', '')[:5]
@@ -111,6 +112,35 @@ def start_new_chat():
     print(f"[Chat] New session: {current_session_id}")
     return initial_history, gr.update(choices=get_session_choices(), value=None)
 
+def _legacy_dict_history_to_tuples(history: list) -> list:
+    """המרה מפורמט ישן של role/content לזוגות Gradio."""
+    if not history:
+        return initial_history.copy()
+    if isinstance(history[0], (list, tuple)):
+        return [list(x[:2]) for x in history]
+    out: list[list] = []
+    i = 0
+    while i < len(history):
+        m = history[i]
+        if not isinstance(m, dict):
+            break
+        role = m.get("role")
+        if role == "user":
+            u = m.get("content", "")
+            if i + 1 < len(history) and history[i + 1].get("role") == "assistant":
+                out.append([u, history[i + 1].get("content", "")])
+                i += 2
+            else:
+                out.append([u, ""])
+                i += 1
+        elif role == "assistant":
+            out.append([None, m.get("content", "")])
+            i += 1
+        else:
+            i += 1
+    return out if out else initial_history.copy()
+
+
 def load_chat_session(session_selection):
     global current_session_id
     if not session_selection or session_selection == "No previous chats":
@@ -123,8 +153,10 @@ def load_chat_session(session_selection):
                 history = data["history"].copy()
                 if not history:
                     history = initial_history.copy()
+                elif isinstance(history[0], dict):
+                    history = _legacy_dict_history_to_tuples(history)
                 return history
-    except:
+    except Exception:
         pass
     return initial_history
 
@@ -136,8 +168,7 @@ def save_chat_message(message, response):
             "title": get_session_title(message),
             "created": datetime.datetime.now()
         }
-    chat_sessions[current_session_id]["history"].append({"role": "user", "content": message})
-    chat_sessions[current_session_id]["history"].append({"role": "assistant", "content": response})
+    chat_sessions[current_session_id]["history"].append([message, response])
 
 def chat_with_agent_simple(message, history):
     try:
@@ -193,11 +224,6 @@ REMOVE_RTL_CSS = """<style id="rtl-style">
 }
 .md ul, .md ol, .prose ul, .prose ol { padding-left: 1.5em !important; padding-right: 0 !important; }
 </style>"""
-
-def toggle_rtl(current_label):
-    if "כבוי" in current_label or "Off" in current_label:
-        return RTL_CSS, "🔤 RTL פועל"
-    return REMOVE_RTL_CSS, "🔤 RTL כבוי"
 
 # ── Contact link ───────────────────────────────────────────────────────────────
 contact_value = account_email.strip()
@@ -702,13 +728,12 @@ def toggle_rtl(current_label):
 def user_message(user_msg, history):
     """Send user message to the agent and append both user + assistant turns."""
     if not user_msg or not user_msg.strip():
-        return "", history or initial_history
-    history = history or []
+        return "", history if history is not None else initial_history
+    history = list(history or [])
+    if history and isinstance(history[0], dict):
+        history = _legacy_dict_history_to_tuples(history)
     response = chat_with_agent_simple(user_msg, history)
-    new_history = list(history) + [
-        {"role": "user", "content": user_msg},
-        {"role": "assistant", "content": response},
-    ]
+    new_history = history + [[user_msg, response]]
     return "", new_history
 
 # ── Gradio layout ──────────────────────────────────────────────────────────────
@@ -740,7 +765,6 @@ with gr.Blocks(title=app_name, css=custom_css) as demo:
                 height=520,
                 show_label=False,
                 elem_classes=["custom-chatbot"],
-                type="messages",
             )
 
             with gr.Row(elem_classes=["input-row"]):
@@ -781,4 +805,9 @@ if __name__ == "__main__":
     print(f"Listen:    {server_name}:{server_port}")
     print("=" * 60)
     print("\nChat interface ready. Open your browser to start chatting.")
-    demo.launch(share=False, server_name=server_name, server_port=server_port)
+    demo.launch(
+        share=False,
+        server_name=server_name,
+        server_port=server_port,
+        inbrowser=False,
+    )
